@@ -3,6 +3,7 @@ from pyspark.sql.types import DoubleType, StringType, TimestampType, LongType
 from pyspark.sql import SparkSession
 
 import pandas as pd
+import numpy as np
 
 # spark = (SparkSession
 #     .builder
@@ -21,11 +22,16 @@ def pandas_cubed(a: pd.Series) -> pd.Series:
 
 cubed = pandas_udf(pandas_cubed, returnType=LongType())
 
-def hi_low_diff_func(hi: pd.Series, lo: pd.Series) -> pd.Series:
-    return hi - lo
-hi_low_diff = pandas_udf(hi_low_diff_func, returnType=DoubleType())
+def daily_drawdown_func(hi: pd.Series, lo: pd.Series) -> pd.Series:
+    '''Calculates maximum loss given high and low values'''
+    return (lo - hi) / hi
+daily_drawdown = pandas_udf(daily_drawdown_func, returnType=DoubleType())
 
 def intraday_volatility_func(open: pd.Series, hi: pd.Series, lo: pd.Series) -> pd.Series:
     return (open - hi).abs() + (open - lo).abs()
 intraday_volatility = pandas_udf(intraday_volatility_func, returnType=DoubleType())
-# print(hi_low_diff_func(pd.Series([1,2]), pd.Series([0,0])))
+
+def overall_drawdown_func(hi: pd.Series, lo: pd.Series) -> np.double:
+    '''Calculates maximum loss given high and low values as a scalar of maximum total loss'''
+    return (max(hi) - min(lo)) / max(hi)
+overall_drawdown = pandas_udf(overall_drawdown_func, returnType=DoubleType())
